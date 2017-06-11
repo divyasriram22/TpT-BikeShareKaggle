@@ -1,0 +1,143 @@
+---
+title: "DS_Kaggle_BikeShare_OLS"
+author: "Divya"
+date: "6/10/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# cat("\014")  
+setwd("~/Desktop/MIDS/DivyaGitHub/TpT-BikeShareKaggle/")
+
+#libraries
+library(car)
+library(lmtest) #regression with heteroskadasticity
+library(sandwich) #regression with heteroskadasticity
+library(stargazer)
+library(effsize) #for cohen's d (practical significance)
+library(rpart) #for tree
+library(Metrics) #for rmsle
+library(party)
+
+train = read.csv("train.csv", sep = ',')
+train_data = read.csv("train_data.csv", sep = ',')
+dev_data = read.csv("dev_data.csv", sep = ',')
+test_data = read.csv("test_data.csv", sep = ',')
+
+```
+
+## RPART MODEL
+
+Using rpart (recursive partitioning and regression trees)
+
+### RPART Train Data
+Let's try use the rpart model to train with our train_data set.
+
+```{r}
+summary(train_data)
+# choosing the variables to include in the model
+formula_rpart = count ~ hour + temp + humidity + season + weather + dayofweek + windspeed + month + workingday
+
+# fitting forumula to the model
+fit_rpart = rpart(formula_rpart, data=train_data)
+
+# tells us the importance of each variable in the model
+fit_rpart
+
+plot(fit_rpart)
+text(fit_rpart, use.n=TRUE)
+
+```
+
+According to this model, the most important factor is hour (biggest split).
+
+### RPART Predict With Dev Data Set
+
+Let's try use the rpart model to predict with our dev_data set. And then we can calculate rmsle to evaluate our model.
+
+```{r}
+#dev_data
+predict_rpart_dev = predict(fit_rpart, dev_data)
+
+# putting our predictions + hours into dataframe
+submit_rpart_dev = data.frame(datetime = dev_data$datetime, count=predict_rpart_dev)
+
+#checking root mean squared log error (like the evaluation in kaggle)
+rmsle(dev_data$count, abs(predict_rpart_dev))
+```
+
+### RPART Predict With Test Data
+
+Let's try use the rpart model to predict with our test_data set. We'll save the predictions for the test_data set along with the datetime column as a dataframe and convert and save that into a csv file to upload to kaggle.
+
+```{r}
+#test_data
+predict_rpart_test = predict(fit_rpart, test_data)
+
+# putting our predictions + hours into dataframe
+submit_rpart_test = data.frame(datetime = test_data$datetime, count=predict_rpart_test)
+
+# writing the dataframe to a csv file --> submit to kaggle
+write.csv(submit_rpart_test, file="submit_rpart_test_v1.csv",row.names=FALSE)
+
+```
+
+## PARTY MODEL
+
+### PARTY Train Data
+
+Let's try use the party model to train with our train_data set.
+
+Using party (recursive partitioning and regression trees)
+
+```{r}
+formula_ctree = count ~ hour + temp + humidity + season + weather + dayofweek #+ windspeed + month + workingday
+
+#fitting forumula to the model
+fit_ctree = ctree(formula_ctree, data=train_data)
+
+#tells us the importance of each variable in the model
+fit_ctree
+
+plot(fit_ctree)
+```
+
+
+According to this model, the most important factor is temp (biggest split).
+
+### PARTY Predict With Dev Data Set
+
+Let's try use the party model to predict with our dev_data set. And then we can calculate rmsle to evaluate our model.
+
+```{r}
+#dev_data
+predict_ctree_dev = predict(fit_ctree, dev_data)
+
+# putting our predictions + hours into dataframe
+submit_ctree_dev = data.frame(datetime = dev_data$datetime, count=predict_ctree_dev)
+
+#checking root mean squared log error (like the evaluation in kaggle)
+rmsle(dev_data$count, abs(predict_ctree_dev))
+```
+
+
+### PARTY Predict With Test Data
+
+Let's try use the party model to predict with our test_data set. We'll save the predictions for the test_data set along with the datetime column as a dataframe and convert and save that into a csv file to upload to kaggle.
+
+```{r}
+#test_data
+predict_ctree_test = predict(fit_ctree, test_data)
+
+# putting our predictions + hours into dataframe
+submit_ctree_test = data.frame(datetime = test_data$datetime, count=predict_ctree_test)
+
+# writing the dataframe to a csv file --> submit to kaggle
+write.csv(submit_ctree_test, file="submit_ctree_test_changedseasonsfewvariables.csv",row.names=FALSE)
+
+```
+
