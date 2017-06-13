@@ -24,7 +24,6 @@ library(party)
 library(randomForest)
 
 
-#train = read.csv("../TpT-BikeShareKaggle/Orig_Data_Files/train.csv", sep = ',')
 train_data = read.csv("../TpT-BikeShareKaggle/FeatureEng_Data_Files/train_data.csv", sep = ',')
 dev_data = read.csv("../TpT-BikeShareKaggle/FeatureEng_Data_Files/dev_data.csv", sep = ',')
 test_data = read.csv("../TpT-BikeShareKaggle/FeatureEng_Data_Files/test_data.csv", sep = ',')
@@ -153,7 +152,7 @@ write.csv(submit_ctree_test, file="../TpT-BikeShareKaggle/Submission_Files/party
 formula_rf = count ~ hour + temp + humidity + season + weather + dayofweek + windspeed + month + workingday
 
 # fitting forumula to the model
-rf_model = randomForest(formula_rpart, data=train_data, ntree = 250)
+rf_model = randomForest(formula_rf, data=train_data, ntree = 250)
 
 # tells us the importance of each variable in the model
 print(rf_model)
@@ -183,7 +182,7 @@ predict_rf_test = predict(rf_model, test_data)
 submit_rf_test = data.frame(datetime = test_data$datetime, count=predict_rf_test)
 
 # writing the dataframe to a csv file --> submit to kaggle
-write.csv(submit_rf_test, file="../TpT-BikeShareKaggle/Submission_Files/randomforest/submit_rf_test_250trees3var_removedwindspeed.csv",row.names=FALSE)
+write.csv(submit_rf_test, file="../TpT-BikeShareKaggle/Submission_Files/randomforest/submit_rf_test_250trees3var_UNchangedseasons.csv",row.names=FALSE)
 ```
 
 -----------------------------------------------------------------
@@ -207,13 +206,17 @@ write.csv(submit_rf_test, file="../TpT-BikeShareKaggle/Submission_Files/randomfo
 - 3 variables
 - changed seasons
 
-5. submit_rf_test_250trees3var_removedwindspeed.csv
+5. submit_rf_test_250trees3var_removedwindspeed.csv : 0.60693
 - variables (no windspeed) (count ~ hour + temp + humidity + season + weather + dayofweek + windspeed + month + workingday)
 - 250 trees
 - 3 variables
 - changes seasons
 
-
+6. submit_rf_test_250trees3var_UNchangedseasons.csv : (0.59960)
+- variables all (count ~ hour + temp + humidity + season + weather + dayofweek + windspeed + month + workingday)
+- 250 trees
+- 3 variables
+- UNchanged seasons
 
 
 
