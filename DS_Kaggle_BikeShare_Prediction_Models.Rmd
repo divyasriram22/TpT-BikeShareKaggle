@@ -1,0 +1,222 @@
+---
+title: "DS_Kaggle_BikeShare_Prediction_Models"
+author: "Divya Sriram"
+date: "6/10/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Decision trees are particulary nice to use when predicting continous outcome variables.
+
+```{r}
+# cat("\014")  
+setwd("~/Desktop/MIDS/DivyaGitHub/TpT-BikeShareKaggle")
+
+#libraries
+
+library(rpart) #for tree
+library(Metrics) #for rmsle
+library(party)
+library(randomForest)
+
+
+#train = read.csv("../TpT-BikeShareKaggle/Orig_Data_Files/train.csv", sep = ',')
+train_data = read.csv("../TpT-BikeShareKaggle/FeatureEng_Data_Files/train_data.csv", sep = ',')
+dev_data = read.csv("../TpT-BikeShareKaggle/FeatureEng_Data_Files/dev_data.csv", sep = ',')
+test_data = read.csv("../TpT-BikeShareKaggle/FeatureEng_Data_Files/test_data.csv", sep = ',')
+
+summary(train_data)
+```
+
+# (1) RPART MODEL
+
+Using rpart (recursive partitioning and regression trees)
+
+### (1a) RPART Train Data
+Let's try use the rpart model to train with our train_data set.
+
+```{r}
+
+# choosing the variables to include in the model
+formula_rpart = count ~ hour + temp + humidity + season + weather + dayofweek + windspeed + month + workingday
+
+# fitting forumula to the model
+fit_rpart = rpart(formula_rpart, data=train_data)
+
+# tells us the importance of each variable in the model
+fit_rpart
+
+plot(fit_rpart)
+text(fit_rpart, use.n=TRUE)
+
+```
+
+According to this model, the most important factor is hour (biggest split).
+
+### (1b) RPART Predict With Dev Data Set
+
+Let's try use the rpart model to predict with our dev_data set. And then we can calculate rmsle to evaluate our model.
+
+```{r}
+#dev_data
+predict_rpart_dev = predict(fit_rpart, dev_data)
+
+# putting our predictions + hours into dataframe
+submit_rpart_dev = data.frame(datetime = dev_data$datetime, count=predict_rpart_dev)
+
+#checking root mean squared log error (like the evaluation in kaggle)
+rmsle(dev_data$count, abs(predict_rpart_dev))
+```
+
+### (1c) RPART Predict With Test Data Set
+
+Let's try use the rpart model to predict with our test_data set. We'll save the predictions for the test_data set along with the datetime column as a dataframe and convert and save that into a csv file to upload to kaggle.
+
+```{r}
+#test_data
+predict_rpart_test = predict(fit_rpart, test_data)
+
+# putting our predictions + hours into dataframe
+submit_rpart_test = data.frame(datetime = test_data$datetime, count=predict_rpart_test)
+
+# writing the dataframe to a csv file --> submit to kaggle
+write.csv(submit_rpart_test, file="../TpT-BikeShareKaggle/Submission_Files/rpart/submit_rpart_test_v3.csv",row.names=FALSE)
+
+```
+
+# (2) PARTY MODEL
+
+### (2a) PARTY Train Data
+
+Let's try use the party model to train with our train_data set.
+
+Using party (recursive partitioning and regression trees)
+
+```{r}
+
+# choosing the variables to include in the model
+formula_ctree = count ~ hour + temp + humidity + season + weather + dayofweek + windspeed + month + workingday
+
+#fitting forumula to the model
+fit_ctree = ctree(formula_ctree, data=train_data)
+
+#tells us the importance of each variable in the model
+fit_ctree
+
+plot(fit_ctree)
+```
+
+
+According to this model, the most important factor is temp (biggest split).
+
+### (2b) PARTY Predict With Dev Data Set
+
+Let's try use the party model to predict with our dev_data set. And then we can calculate rmsle to evaluate our model.
+
+```{r}
+#dev_data
+predict_ctree_dev = predict(fit_ctree, dev_data)
+
+# putting our predictions + hours into dataframe
+submit_ctree_dev = data.frame(datetime = dev_data$datetime, count=predict_ctree_dev)
+
+#checking root mean squared log error (like the evaluation in kaggle)
+rmsle(dev_data$count, abs(predict_ctree_dev))
+```
+
+
+### (2c) PARTY Predict With Test Data Set
+
+Let's try use the party model to predict with our test_data set. We'll save the predictions for the test_data set along with the datetime column as a dataframe and convert and save that into a csv file to upload to kaggle.
+
+```{r}
+#test_data
+predict_ctree_test = predict(fit_ctree, test_data)
+
+# putting our predictions + hours into dataframe
+submit_ctree_test = data.frame(datetime = test_data$datetime, count=predict_ctree_test)
+
+# writing the dataframe to a csv file --> submit to kaggle
+write.csv(submit_ctree_test, file="../TpT-BikeShareKaggle/Submission_Files/party/submit_ctree_test_changedseasonsfewvariables.csv",row.names=FALSE)
+
+```
+
+# (3) RANDOM FORESTS MODEL
+
+### Random Forests Train Data
+```{r}
+# choosing the variables to include in the model
+formula_rf = count ~ hour + temp + humidity + season + weather + dayofweek + windspeed + month + workingday
+
+# fitting forumula to the model
+rf_model = randomForest(formula_rpart, data=train_data, ntree = 250)
+
+# tells us the importance of each variable in the model
+print(rf_model)
+```
+
+### Random Forests Predict With Dev Data Set
+
+```{r}
+#dev_data
+predict_rf_dev = predict(rf_model, dev_data)
+
+# putting our predictions + hours into dataframe
+submit_rf_dev = data.frame(datetime = dev_data$datetime, count=predict_rf_dev)
+
+#checking root mean squared log error (like the evaluation in kaggle)
+rmsle(dev_data$count, abs(predict_rf_dev))
+
+```
+
+### Random Forests Predict With Test Data Set
+
+```{r}
+#test_data
+predict_rf_test = predict(rf_model, test_data)
+
+# putting our predictions + hours into dataframe
+submit_rf_test = data.frame(datetime = test_data$datetime, count=predict_rf_test)
+
+# writing the dataframe to a csv file --> submit to kaggle
+write.csv(submit_rf_test, file="../TpT-BikeShareKaggle/Submission_Files/randomforest/submit_rf_test_250trees3var_removedwindspeed.csv",row.names=FALSE)
+```
+
+-----------------------------------------------------------------
+# SUBMISSIONS RECORDS:
+
+1. submit_rpart_test_v1.csv: 0.90215
+- variables all (count ~ hour + temp + humidity + season + weather + dayofweek + windspeed + month + workingday)
+- unchanged seasons
+
+2. submit_ctree_test_changedseasonsfewvariables.csv: 0.67175
+- not all variables
+- changed seasons
+
+3. submit_ctree_test_changedseasons.csv: 0.63706
+- variables all (count ~ hour + temp + humidity + season + weather + dayofweek + windspeed + month + workingday)
+- changed seasons
+
+4. submit_rf_test_250trees3var.csv: 0.60693
+- variables all (count ~ hour + temp + humidity + season + weather + dayofweek + windspeed + month + workingday)
+- 250 trees
+- 3 variables
+- changed seasons
+
+5. submit_rf_test_250trees3var_removedwindspeed.csv
+- variables (no windspeed) (count ~ hour + temp + humidity + season + weather + dayofweek + windspeed + month + workingday)
+- 250 trees
+- 3 variables
+- changes seasons
+
+
+
+
+
+
+
+
